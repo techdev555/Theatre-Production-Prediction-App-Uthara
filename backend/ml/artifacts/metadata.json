@@ -1,0 +1,80 @@
+{
+  "features": [
+    "genre",
+    "season",
+    "capacity",
+    "ticket_price",
+    "marketing_spend",
+    "run_length_weeks",
+    "cast_popularity",
+    "is_musical",
+    "has_celebrity",
+    "prior_show_avg_rating"
+  ],
+  "categorical": [
+    "genre",
+    "season"
+  ],
+  "numeric": [
+    "capacity",
+    "ticket_price",
+    "marketing_spend",
+    "run_length_weeks",
+    "cast_popularity",
+    "is_musical",
+    "has_celebrity",
+    "prior_show_avg_rating"
+  ],
+  "metrics": {
+    "tickets": {
+      "mae": 10081.242085047905,
+      "r2": 0.9722600069962609
+    },
+    "revenue": {
+      "mae": 1772872.032939815,
+      "r2": 0.9637945118622093
+    },
+    "sold_out": {
+      "accuracy": 0.921,
+      "roc_auc": 0.978851093256059
+    }
+  },
+  "feature_importance": {
+    "tickets": {
+      "genre": 0.03546572044940811,
+      "season": 0.002104230031126009,
+      "capacity": 0.43576170638820555,
+      "ticket_price": 0.015022968745299986,
+      "marketing_spend": 0.022642500551136518,
+      "run_length_weeks": 0.44654767824376956,
+      "cast_popularity": 0.028561275563016356,
+      "is_musical": 0.0013098506988902371,
+      "has_celebrity": 0.006397128159664069,
+      "prior_show_avg_rating": 0.006186941169483521
+    },
+    "revenue": {
+      "genre": 0.025340569570370067,
+      "season": 0.0013708565460675217,
+      "capacity": 0.31417909942350897,
+      "ticket_price": 0.26562799023945166,
+      "marketing_spend": 0.02047930161965413,
+      "run_length_weeks": 0.3378035522553858,
+      "cast_popularity": 0.02154932709406315,
+      "is_musical": 0.0012027151172623604,
+      "has_celebrity": 0.007065581711008938,
+      "prior_show_avg_rating": 0.005381006423227323
+    },
+    "sold_out": {
+      "genre": 0.2963996240540554,
+      "season": 0.02625856954176293,
+      "capacity": 0.009466806360450315,
+      "ticket_price": 0.13891022710054632,
+      "marketing_spend": 0.20230413295356423,
+      "run_length_weeks": 0.005776606161649825,
+      "cast_popularity": 0.1792329012918996,
+      "is_musical": 0.02063264264272247,
+      "has_celebrity": 0.053399298397687985,
+      "prior_show_avg_rating": 0.06761919149566102
+    }
+  }
+}

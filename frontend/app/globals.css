@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+:root {
+  --crimson: #8B1A1A;
+  --crimson-dark: #5C0F0F;
+  --crimson-light: #C41E1E;
+  --gold: #C9A84C;
+  --gold-light: #E8C76A;
+  --gold-pale: #F5E6B8;
+  --cream: #FAF3E0;
+  --dark: #1A0A0A;
+  --dark-2: #2D1515;
+  --muted: #6B4040;
+}
+
+body {
+  background-color: var(--dark);
+  color: var(--cream);
+  font-family: 'Georgia', 'Times New Roman', serif;
+  min-height: 100vh;
+}

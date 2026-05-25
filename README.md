@@ -1,4 +1,4 @@
-# Curtain Call — Theatre Production Predictor
+# Theatre Production Predictor
 
 AI-powered app that predicts box office performance of a theatre production before opening night.
 

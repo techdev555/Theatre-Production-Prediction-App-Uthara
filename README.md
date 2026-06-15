@@ -93,3 +93,20 @@ Three Gradient Boosting models trained on a 5,000-row synthetic dataset:
 2. Import to Vercel
 3. Set environment variable: `NEXT_PUBLIC_API_URL=https://your-render-service.onrender.com`
 4. Deploy
+
+git clone https://github.com/your-username/your-repo.git
+cd theatre-prediction-app
+
+# Terminal 1 — Backend
+cd backend
+python -m venv venv
+# Windows:  venv\Scripts\activate
+# Mac/Linux: source venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000
+
+# Terminal 2 — Frontend
+cd frontend
+npm install
+npm run dev
+

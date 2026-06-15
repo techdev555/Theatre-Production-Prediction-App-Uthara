@@ -1,4 +1,4 @@
-"""Train three models: tickets-sold regressor, revenue regressor, sold-out classifier."""
+"""Train models: tickets-sold regressor (point + p10 + p90), sold-out classifier."""
 from __future__ import annotations
 
 import json
@@ -54,6 +54,21 @@ def train_regressor(X_train, y_train, X_test, y_test, name: str):
     return pipe, {"mae": float(mae), "r2": float(r2)}
 
 
+def train_quantile_regressor(X_train, y_train, alpha: float, name: str):
+    pipe = Pipeline(
+        steps=[
+            ("prep", build_preprocessor()),
+            ("model", GradientBoostingRegressor(
+                loss="quantile", alpha=alpha,
+                n_estimators=300, max_depth=4, random_state=42,
+            )),
+        ]
+    )
+    pipe.fit(X_train, y_train)
+    print(f"[{name}] quantile alpha={alpha} trained")
+    return pipe
+
+
 def train_classifier(X_train, y_train, X_test, y_test, name: str):
     pipe = Pipeline(
         steps=[
@@ -65,14 +80,12 @@ def train_classifier(X_train, y_train, X_test, y_test, name: str):
     pred = pipe.predict(X_test)
     proba = pipe.predict_proba(X_test)[:, 1]
     acc = accuracy_score(y_test, pred)
-    # roc_auc only valid if both classes present in test set
     auc = roc_auc_score(y_test, proba) if len(np.unique(y_test)) > 1 else float("nan")
     print(f"[{name}] ACC={acc:.3f}  AUC={auc:.3f}")
     return pipe, {"accuracy": float(acc), "roc_auc": float(auc)}
 
 
 def feature_importance(pipe: Pipeline) -> dict[str, float]:
-    """Return human-readable feature importances for the wrapped GBM."""
     prep: ColumnTransformer = pipe.named_steps["prep"]
     model = pipe.named_steps["model"]
     importances = model.feature_importances_
@@ -81,7 +94,6 @@ def feature_importance(pipe: Pipeline) -> dict[str, float]:
     cat_names = list(ohe.get_feature_names_out(CATEGORICAL))
     all_names = cat_names + NUMERIC
 
-    # Collapse one-hot dummies back to their parent categorical feature
     collapsed: dict[str, float] = {f: 0.0 for f in FEATURES}
     for name, imp in zip(all_names, importances):
         for cat in CATEGORICAL:
@@ -101,21 +113,31 @@ def main() -> None:
 
     X = df[FEATURES]
     y_tickets = df["tickets_sold"]
-    y_revenue = df["total_revenue"]
     y_soldout = df["sold_out"]
 
     X_train, X_test, yt_train, yt_test = train_test_split(X, y_tickets, test_size=0.2, random_state=42)
-    _, _, yr_train, yr_test = train_test_split(X, y_revenue, test_size=0.2, random_state=42)
     _, _, ys_train, ys_test = train_test_split(X, y_soldout, test_size=0.2, random_state=42)
 
     tickets_model, tickets_metrics = train_regressor(X_train, yt_train, X_test, yt_test, "tickets")
-    revenue_model, revenue_metrics = train_regressor(X_train, yr_train, X_test, yr_test, "revenue")
     soldout_model, soldout_metrics = train_classifier(X_train, ys_train, X_test, ys_test, "sold_out")
+
+    # Quantile models for 80% prediction band
+    p10_model = train_quantile_regressor(X_train, yt_train, alpha=0.1, name="tickets_p10")
+    p90_model = train_quantile_regressor(X_train, yt_train, alpha=0.9, name="tickets_p90")
+
+    # Interval coverage metric (expect ~0.80)
+    p10_pred = p10_model.predict(X_test)
+    p90_pred = p90_model.predict(X_test)
+    coverage = float(np.mean((p10_pred <= yt_test.values) & (yt_test.values <= p90_pred)))
+    print(f"[tickets interval] coverage={coverage:.3f}")
 
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     joblib.dump(tickets_model, ARTIFACTS / "tickets_model.joblib")
-    joblib.dump(revenue_model, ARTIFACTS / "revenue_model.joblib")
     joblib.dump(soldout_model, ARTIFACTS / "soldout_model.joblib")
+    joblib.dump(p10_model, ARTIFACTS / "tickets_p10_model.joblib")
+    joblib.dump(p90_model, ARTIFACTS / "tickets_p90_model.joblib")
+
+    tickets_metrics["coverage"] = coverage
 
     metadata = {
         "features": FEATURES,
@@ -123,12 +145,10 @@ def main() -> None:
         "numeric": NUMERIC,
         "metrics": {
             "tickets": tickets_metrics,
-            "revenue": revenue_metrics,
             "sold_out": soldout_metrics,
         },
         "feature_importance": {
             "tickets": feature_importance(tickets_model),
-            "revenue": feature_importance(revenue_model),
             "sold_out": feature_importance(soldout_model),
         },
     }

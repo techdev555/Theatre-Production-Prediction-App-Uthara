@@ -38,6 +38,7 @@ Thumbs.db
 *.user
 CLAUDE.md
 AGENTS.md
+PLAN.html
 
 # Next.js
 frontend/.next/

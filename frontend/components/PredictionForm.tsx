@@ -19,6 +19,101 @@ const DEFAULT: PredictionRequest = {
   prior_show_avg_rating: 7.5,
 };
 
+interface Preset {
+  label: string;
+  emoji: string;
+  description: string;
+  values: PredictionRequest;
+}
+
+const PRESETS: Preset[] = [
+  {
+    label: "Broadway Blockbuster",
+    emoji: "🌟",
+    description: "Celebrity musical, peak season, huge marketing",
+    values: {
+      genre: "Musical",
+      season: "Winter",
+      capacity: 1800,
+      ticket_price: 195,
+      marketing_spend: 850000,
+      run_length_weeks: 24,
+      cast_popularity: 9.5,
+      is_musical: true,
+      has_celebrity: true,
+      prior_show_avg_rating: 9.2,
+    },
+  },
+  {
+    label: "Indie Drama",
+    emoji: "🎭",
+    description: "Small experimental theatre, shoestring budget",
+    values: {
+      genre: "Experimental",
+      season: "Fall",
+      capacity: 120,
+      ticket_price: 30,
+      marketing_spend: 8000,
+      run_length_weeks: 3,
+      cast_popularity: 3.5,
+      is_musical: false,
+      has_celebrity: false,
+      prior_show_avg_rating: 6.0,
+    },
+  },
+  {
+    label: "Family Holiday Show",
+    emoji: "🎄",
+    description: "Seasonal family production, moderate spend",
+    values: {
+      genre: "Family",
+      season: "Winter",
+      capacity: 950,
+      ticket_price: 65,
+      marketing_spend: 220000,
+      run_length_weeks: 6,
+      cast_popularity: 6.0,
+      is_musical: true,
+      has_celebrity: false,
+      prior_show_avg_rating: 7.8,
+    },
+  },
+  {
+    label: "Summer Comedy",
+    emoji: "😂",
+    description: "Light comedy, tourist season, mid-tier cast",
+    values: {
+      genre: "Comedy",
+      season: "Summer",
+      capacity: 600,
+      ticket_price: 80,
+      marketing_spend: 75000,
+      run_length_weeks: 10,
+      cast_popularity: 6.8,
+      is_musical: false,
+      has_celebrity: false,
+      prior_show_avg_rating: 7.2,
+    },
+  },
+  {
+    label: "Dark Thriller",
+    emoji: "🔪",
+    description: "Edgy thriller, known director, limited run",
+    values: {
+      genre: "Thriller",
+      season: "Fall",
+      capacity: 400,
+      ticket_price: 110,
+      marketing_spend: 140000,
+      run_length_weeks: 5,
+      cast_popularity: 7.8,
+      is_musical: false,
+      has_celebrity: true,
+      prior_show_avg_rating: 8.4,
+    },
+  },
+];
+
 interface Props {
   onSubmit: (req: PredictionRequest) => void;
   loading: boolean;
@@ -26,9 +121,17 @@ interface Props {
 
 export function PredictionForm({ onSubmit, loading }: Props) {
   const [form, setForm] = useState<PredictionRequest>(DEFAULT);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
 
-  const set = (key: keyof PredictionRequest, value: unknown) =>
+  const set = (key: keyof PredictionRequest, value: unknown) => {
+    setActivePreset(null);
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const applyPreset = (preset: Preset) => {
+    setForm(preset.values);
+    setActivePreset(preset.label);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +140,52 @@ export function PredictionForm({ onSubmit, loading }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Preset buttons */}
+      <div>
+        <p className="text-xs font-sans tracking-widest uppercase mb-3" style={{ color: "#C9A84C" }}>
+          Quick presets
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+          {PRESETS.map((preset) => {
+            const isActive = activePreset === preset.label;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => applyPreset(preset)}
+                className="rounded-lg px-3 py-2.5 text-left transition-all border"
+                style={{
+                  background: isActive ? "#5C0F0F" : "#1A0A0A",
+                  borderColor: isActive ? "#C9A84C" : "#6B4040",
+                  boxShadow: isActive ? "0 0 0 1px #C9A84C" : "none",
+                }}
+              >
+                <span className="block text-base leading-none mb-1">{preset.emoji}</span>
+                <span
+                  className="block text-xs font-semibold font-sans leading-snug"
+                  style={{ color: isActive ? "#E8C76A" : "#FAF3E0" }}
+                >
+                  {preset.label}
+                </span>
+                <span
+                  className="block text-xs font-sans leading-snug mt-0.5"
+                  style={{ color: "#6B4040" }}
+                >
+                  {preset.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1" style={{ background: "#6B4040" }} />
+        <span className="text-xs font-sans" style={{ color: "#6B4040" }}>or customise below</span>
+        <div className="h-px flex-1" style={{ background: "#6B4040" }} />
+      </div>
+
       {/* Row 1: Genre + Season */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Genre">
@@ -64,7 +213,7 @@ export function PredictionForm({ onSubmit, loading }: Props) {
           <NumberInput
             value={form.capacity} min={50} max={5000} step={50}
             onChange={(v) => set("capacity", v)}
-            format={(v) => v.toLocaleString()}
+            format={(v) => v.toLocaleString('en-US')}
           />
         </Field>
         <Field label="Ticket Price (USD)">
@@ -82,7 +231,7 @@ export function PredictionForm({ onSubmit, loading }: Props) {
           <NumberInput
             value={form.marketing_spend} min={0} max={2000000} step={5000}
             onChange={(v) => set("marketing_spend", v)}
-            format={(v) => `$${v.toLocaleString()}`}
+            format={(v) => `$${v.toLocaleString('en-US')}`}
           />
         </Field>
         <Field label="Run Length (weeks)">

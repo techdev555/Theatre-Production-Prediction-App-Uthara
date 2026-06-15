@@ -1,7 +1,6 @@
 """Generate a synthetic dataset of theatre productions with realistic feature-to-outcome relationships."""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +11,6 @@ RNG = np.random.default_rng(seed=42)
 GENRES = ["Musical", "Drama", "Comedy", "Tragedy", "Thriller", "Family", "Experimental"]
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
 
-# Per-genre base appeal multipliers (musicals and family shows tend to sell more)
 GENRE_APPEAL = {
     "Musical": 1.25,
     "Drama": 0.95,
@@ -26,34 +24,32 @@ GENRE_APPEAL = {
 SEASON_LIFT = {"Spring": 1.05, "Summer": 0.95, "Fall": 1.10, "Winter": 1.15}
 
 
-def generate(n: int = 5000) -> pd.DataFrame:
+def generate(n: int = 20000) -> pd.DataFrame:
     genre = RNG.choice(GENRES, size=n)
     season = RNG.choice(SEASONS, size=n)
-    capacity = RNG.integers(200, 2000, size=n)
-    ticket_price = np.round(RNG.uniform(25, 250, size=n), 2)
-    marketing_spend = np.round(RNG.uniform(5_000, 500_000, size=n), 2)
-    run_length_weeks = RNG.integers(2, 32, size=n)
+    # Ranges now match Pydantic schema exactly
+    capacity = RNG.integers(50, 5001, size=n)
+    ticket_price = np.round(np.exp(RNG.uniform(np.log(5), np.log(1000), size=n)), 2)   # log-uniform
+    marketing_spend = np.round(RNG.uniform(0, 1, size=n) ** 2 * 2_000_000, 2)          # skewed low
+    run_length_weeks = RNG.integers(1, 53, size=n)
     cast_popularity = np.round(RNG.uniform(1, 10, size=n), 2)
     is_musical = (genre == "Musical").astype(int)
     has_celebrity = (RNG.random(n) < (cast_popularity / 12)).astype(int)
     prior_show_avg_rating = np.round(RNG.uniform(1, 10, size=n), 2)
 
-    # ------------------------------------------------------------------
-    # Build outcomes with sensible (but noisy) relationships.
-    # ------------------------------------------------------------------
     genre_mult = np.array([GENRE_APPEAL[g] for g in genre])
     season_mult = np.array([SEASON_LIFT[s] for s in season])
 
-    # Base occupancy rate driven by appeal + cast + marketing + rating
     base_occupancy = (
-        0.30
+        0.00
         + 0.04 * cast_popularity
         + 0.025 * prior_show_avg_rating
         + 0.10 * has_celebrity
-        + 0.000_0008 * marketing_spend  # diminishing returns approximated linearly
+        + 0.045 * np.log1p(marketing_spend / 10_000)   # diminishing returns (was linear)
     )
-    # Price elasticity: higher prices reduce occupancy
-    price_penalty = (ticket_price - 75) * 0.0015
+    # Log-based price elasticity active across full $5–$1000 range (was linear around $75)
+    # Coefficient 0.10 (not 0.18) prevents extreme occupancy boost for very cheap tickets
+    price_penalty = 0.10 * np.log(ticket_price / 75.0)
     occupancy_rate = (base_occupancy - price_penalty) * genre_mult * season_mult
     occupancy_rate = np.clip(
         occupancy_rate + RNG.normal(0, 0.06, size=n),
@@ -61,12 +57,10 @@ def generate(n: int = 5000) -> pd.DataFrame:
         0.99,
     )
 
-    # 8 shows per week is a reasonable Broadway baseline
     total_shows = run_length_weeks * 8
     expected_tickets_sold = (occupancy_rate * capacity * total_shows).astype(int)
     total_revenue = np.round(expected_tickets_sold * ticket_price, 2)
 
-    # Sold-out flag: any production averaging >88% occupancy
     sold_out = (occupancy_rate > 0.88).astype(int)
 
     df = pd.DataFrame(
@@ -81,7 +75,6 @@ def generate(n: int = 5000) -> pd.DataFrame:
             "is_musical": is_musical,
             "has_celebrity": has_celebrity,
             "prior_show_avg_rating": prior_show_avg_rating,
-            # targets
             "tickets_sold": expected_tickets_sold,
             "total_revenue": total_revenue,
             "sold_out": sold_out,
@@ -100,6 +93,7 @@ def main() -> None:
     print(df.head())
     print("\nTarget summary:")
     print(df[["tickets_sold", "total_revenue", "sold_out"]].describe())
+    print("sold_out rate:", df["sold_out"].mean())
 
 
 if __name__ == "__main__":

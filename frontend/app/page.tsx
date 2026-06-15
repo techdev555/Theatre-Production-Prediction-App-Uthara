@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { PredictionForm } from "@/components/PredictionForm";
+import { PredictionHistory } from "@/components/PredictionHistory";
 import { PredictionResults } from "@/components/PredictionResults";
 import { runPrediction, type PredictionRequest, type PredictionResponse } from "@/lib/api";
 
 export default function Home() {
   const [result, setResult] = useState<PredictionResponse | null>(null);
+  const [lastInputs, setLastInputs] = useState<PredictionRequest | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyTick, setHistoryTick] = useState(0);
 
   const handleSubmit = async (req: PredictionRequest) => {
     setLoading(true);
@@ -16,6 +19,8 @@ export default function Home() {
     try {
       const res = await runPrediction(req);
       setResult(res);
+      setLastInputs(req);
+      setHistoryTick((t) => t + 1);
       setTimeout(() => {
         document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -58,7 +63,6 @@ export default function Home() {
           <p className="text-base sm:text-lg max-w-xl mx-auto" style={{ color: "#C9A84C" }}>
             Predict your production&apos;s box office performance before opening night
           </p>
-          {/* Ornamental divider */}
           <div className="flex items-center justify-center gap-3 mt-6">
             <div className="h-px w-16" style={{ background: "#6B4040" }} />
             <span style={{ color: "#C9A84C", fontSize: "1.2rem" }}>✦</span>
@@ -106,9 +110,17 @@ export default function Home() {
               </h2>
               <div className="h-px flex-1" style={{ background: "#6B4040" }} />
             </div>
-            <PredictionResults result={result} />
+            <PredictionResults result={result} inputs={lastInputs!} />
           </section>
         )}
+
+        {/* History */}
+        <section
+          className="rounded-2xl p-6 sm:p-8 border"
+          style={{ background: "#2D1515", borderColor: "#6B4040" }}
+        >
+          <PredictionHistory refreshTrigger={historyTick} />
+        </section>
       </main>
 
       {/* Footer */}
@@ -118,7 +130,6 @@ export default function Home() {
         </p>
       </footer>
 
-      {/* Bottom border */}
       <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #5C0F0F, #C9A84C, #5C0F0F)" }} />
     </div>
   );

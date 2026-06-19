@@ -32,7 +32,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "#1A0A0A" }}>
+  <div className="min-h-screen" style={{ background: "#0F172A" }}>
       {/* Decorative top border */}
       <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #5C0F0F, #C9A84C, #5C0F0F)" }} />
 
@@ -58,7 +58,7 @@ export default function Home() {
               textShadow: "0 2px 20px rgba(201,168,76,0.3)",
             }}
           >
-            Curtain Call
+            Curtain call
           </h1>
           <p className="text-base sm:text-lg max-w-xl mx-auto" style={{ color: "#C9A84C" }}>
             Predict your production&apos;s box office performance before opening night

@@ -30,7 +30,7 @@ py -m venv venv
 
 # Start the API
 ./venv/Scripts/uvicorn.exe app.main:app --reload --port 8000
-python -m uvicorn app.main:app --reload --port 8000
+ python3 -m uvicorn app.main:app --reload --port 8000
 ```
 
 API docs available at: http://localhost:8000/docs

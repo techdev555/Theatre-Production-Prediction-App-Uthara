@@ -32,7 +32,7 @@ export default function Home() {
   };
 
   return (
-  <div className="min-h-screen" style={{ background: "#0F172A" }}>
+    <div className="min-h-screen" style={{ background: "#1A0A0A" }}>
       {/* Decorative top border */}
       <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #5C0F0F, #C9A84C, #5C0F0F)" }} />
 
